@@ -4,13 +4,19 @@
 
 The **Task Management and Report Subscription System** allows users to effectively manage tasks and subscribe to automated reports. Users can receive scheduled email summaries based on their selected frequency (daily, weekly, or monthly). The system includes robust user authentication and authorization to ensure that only authenticated users can access specific endpoints.
 
+## Features
+  - User Authentication: Secure signup, login, and token-based authentication using JWT.
+  - Task Management: Create, update, delete, restore, batch delete and retrieve tasks with support for filtering by status, date range, and more.
+  - Subscription Management: Subscribe or unsubscribe from task summary reports.
+  - Generate Reports: Automated email reports for task summaries based on user-defined schedules.
+
 ## Setup Instructions
 
 ### Prerequisites
 
-- Docker
-- Docker Compose
-- Python 3.12 or later (for local development)
+- Docker: Ensure Docker Desktop is installed and running.
+- Docker Compose: Installed with Docker Desktop.
+- Python 3.12 or later (for local development without Docker).
 
 ## Setup Instructions
 
@@ -60,7 +66,7 @@ Follow these steps to set up and run the project locally.
  ```
 
 
-## API Requests and Responses
+## API Documentation
 
 1. ### User Authentication
    ***Sign Up***: 
@@ -171,7 +177,7 @@ Follow these steps to set up and run the project locally.
            PATCH /api/tasks/update/{id}/
            ```
       - **Request Body:**
-         To update task, send a PUT request with the following JSON payload or PATCH request with partial update:
+         - To update task, send a PUT request with the following JSON payload or PATCH request with partial update:
           ```
              {
                 "title": "Complete user authentication system",
@@ -193,3 +199,111 @@ Follow these steps to set up and run the project locally.
          - Permission Denied - `You do not have permission to access this task` with status 403.
          - `Task doesn't exist.` with status 404
          - Internal Server Error returns status 500.
+
+   ***Delete Task***
+      - Soft delete a task by its ID. and only the task owner can delete the task. If the task is already deleted or not found, returned message that show that.
+      - **Endpoint:**
+           ```
+           DELETE /api/tasks/delete/{id}/
+           ```
+      - **Validation Rules:** 
+         - Deleted task by its owner.
+        
+      - **Returns:**
+         - On success, returns `Task deleted successfully.` with status 204.
+         - On failure, returns `Bad Request - Invalid task ID.` with status 400 and error messages that show errors.
+         - Unauthorized User - returns status 401.
+         - Permission Denied - `You do not have permission to access this task` with status 403.
+         - `Task doesn't exist.` with status 404
+         - Internal Server Error returns status 500.
+
+   ***Restore Task***
+      - Restore the last deleted task for the logged-in user.
+
+      - **Endpoint:**
+           ```
+           POST /api/tasks/restore/
+           ```
+      - **Returns:**
+         - On success, returns `Last deleted task restored successfully.` with status 200.
+         - Unauthorized User - returns status 401.
+         - `No deleted tasks found.` with status 404
+         - Internal Server Error returns status 500.
+   
+   ***Batch Delete***
+      - Batch delete tasks within a specified date range. If no date range is provided, all tasks of the authenticated user will be deleted.
+   
+      - **Endpoint:**
+           ```
+           DELETE /api/tasks/batch-delete/
+           ```
+      - **Parameters:**
+          - `start_date`: (Optional) Filter tasks that start on or after this date (format: YYYY-MM-DD).
+          - `end_date`: (Optional) Filter tasks that end on or before this date (format: YYYY-MM-DD). This filter works as follows:
+               - If a task has a completion_date, it will be included if the completion_date is less than or equal to the provided end_date.
+               - If a task does not have a completion_date but has a due_date, it will be included if the due_date is less than or equal to the provided end_date.
+      - **Returns:**
+         - On success, returns `Tasks successfully deleted.` with status 204.
+         - On failure, returns `Bad Request - Invalid date format. Use YYYY-MM-DD` with status 400 and error messages that show errors.
+         - Unauthorized User - returns status 401.
+         - `No tasks found in the given date range.` with status 404
+         - Internal Server Error returns status 500.
+        
+3. ### Subscription API
+   ***Subscribe:***
+      - subscribes the user or confirms an existing subscription.
+         - If the user is not already subscribed, a new subscription is created with the provided data.
+         - If the user is already subscribed, a message indicating that is returned.
+      - **Endpoint:**
+           ```
+           POST /api/subscribe/
+           ```
+      - **Request Body:**
+         To subscribe to reports, send a POST request with the following JSON payload:
+          ```
+             {
+                "start_date": "2025-01-01 09:00:00",
+                "frequency": "weekly",
+                "report_time": "09:00"
+             }
+         ```
+      - **Validation Rules:**
+         - start_date:
+            - Must be required
+            - Must be in the format 'YYYY-MM-DD HH:00:00'.
+            - Example: "2025-01-01 09:00:00"
+         - frequency: Must be required, and it is one of the following values: 'daily', 'weekly', 'monthly'.
+         - report_time:
+           - Must be required
+           - Must be in a valid time format of 'H:00:00', 'H:00', 'H', H (24-hour format) or 'H AM/PM
+           - Example: "9 AM", "9PM", "09:00:00","18:00", "18", 18 (24-hour format).
+
+      - **Returns:**
+         - On success, returns `User has been successfully subscribed.` with status 201.
+         - With status 200, returns `User is already subscribed.`
+         - On failure, returns validation errors with status 400.
+         - Unauthorized User - returns status 401.
+         - Internal Server Error returns status 500.
+   
+   ***UnSubscribe:***
+      - Unsubscribe the user if you have an active subscription. .
+      - **Endpoint:**
+           ```
+           DELETE /api/subscribe/
+           ```
+      - **Returns:**
+         - On success, returns `User has been successfully unsubscribed.` with status 200.
+         - `No active subscription found.` with status 404
+         - Unauthorized User - returns status 401.
+         - Internal Server Error returns status 500.
+
+4. ### Report Generation
+  The system generates task reports and sends them via email according to the user's subscription preferences. The process involves:
+
+  1) Report Generation: A Celery task retrieves the user's tasks, generates a summary report, and saves it.
+  2) Email Delivery: The generated report is attached to an email and sent to the user's registered email address.
+  3) Frequency Options: Users can choose to receive reports daily, weekly, or monthly.
+
+Below is a sample screenshot of an automatically generated email report:
+
+![Report Email Screenshot](images/report-email-screenshot.png)
