@@ -8,7 +8,11 @@ class SubscriptionAdmin(admin.ModelAdmin):
        Admin interface for managing Subscription objects.
        This class customizes how Subscription objects are displayed, filtered, and searched in the Django admin panel.
     """
-    list_display = ('user__email', 'start_date', 'frequency', 'report_time')
+    list_display = ('user_email', 'start_date', 'frequency', 'report_time')
     list_filter = ('frequency', 'start_date')
-    search_fields = ('user__email', 'frequency')
+    search_fields = ('user_email', 'frequency')
     ordering = ('-start_date',)
+
+    def user_email(self, obj):
+        return obj.user.email
+

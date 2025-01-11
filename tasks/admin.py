@@ -13,12 +13,15 @@ class TaskAdmin(admin.ModelAdmin):
         ordering: Orders tasks by 'id' in the admin interface.
         fieldsets: Customize Form Display to organize fields into sections.
     """
-    list_display = ('id', 'title', 'status', 'start_date', 'due_date', 'completion_date', 'owner__email','is_deleted', 'deleted_at', 'created_at','updated_at')
+    list_display = ('id', 'title', 'status', 'start_date', 'due_date', 'completion_date', 'owner_email','is_deleted', 'deleted_at', 'created_at','updated_at')
     list_filter = ('status', 'start_date', 'due_date', 'completion_date', 'is_deleted')
-    search_fields = ('title', 'description', 'status', 'owner__email', 'is_deleted')
+    search_fields = ('title', 'description', 'status', 'owner_email', 'is_deleted')
     ordering = ['id']
     fieldsets = (
         (None, {'fields': ('title', 'description', 'owner')}),
         ('Dates', {'fields': ('start_date', 'due_date', 'completion_date')}),
         ('Status', {'fields': ('status', 'is_deleted')}),
     )
+
+    def owner_email(self, obj):
+        return obj.owner.email

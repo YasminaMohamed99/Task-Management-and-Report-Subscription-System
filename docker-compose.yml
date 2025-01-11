@@ -1,0 +1,34 @@
+version: '3.9'
+
+services:
+  web:
+    build: .  # Build the image from the Dockerfile in the current directory
+    command: gunicorn task_management.wsgi:application --bind 0.0.0.0:8000  # Run the app using gunicorn
+    volumes:
+      - .:/app  # Mount the current directory into the container (useful for development)
+    ports:
+      - "8000:8000"  # Expose the app on port 8000
+    env_file:
+      - .env  # Load environment variables from the .env file
+    depends_on:
+      - db  # Wait for the database to be ready
+      - redis  # Wait for Redis to be ready
+
+  db:
+    image: postgres:15  # Use the official PostgreSQL image
+    environment:
+      POSTGRES_USER: task_management_user  # Set the database user
+      POSTGRES_PASSWORD: 12345  # Set the database password
+      POSTGRES_DB: task_management_db  # Set the database name
+    volumes:
+      - postgres_data:/var/lib/postgresql/data  # Persist database data
+    ports:
+      - "5432:5432"  # Expose the database on port 5432
+
+  redis:
+    image: redis:7  # Use the official Redis image
+    ports:
+      - "6379:6379"  # Expose Redis on port 6379
+
+volumes:
+  postgres_data:  # Persistent volume for the PostgreSQL database data
